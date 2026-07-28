@@ -1,12 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Page</title>
-    <link rel="stylesheet" href="style/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab 3D - Inicio</title>
+  <link rel="stylesheet" href="./style/style.css">
 </head>
 <body>
-    <h1>Patrick Murphy</h1>
+
+  <!-- Canvas para la escena 3D -->
+  <canvas id="webgl"></canvas>
+
+  <!-- Hero principal (Centro de la pantalla) -->
+  <main class="hero">
+    <h1 class="title">Mi Laboratorio 3D</h1>
+    <p class="subtitle">Explora los experimentos navegando en el menú inferior</p>
+    <button id="btn-action">Hacer girar la figura</button>
+  </main>
+
+  <!-- Menú Inferior Adaptable (Dock deslizable para muchos enlaces) -->
+  <nav class="bottom-dock-wrapper">
+    <span class="dock-label">🧪 Experimentos disponibles</span>
+    
+    <div class="bottom-dock">
+      <a href="./views/exp-01-Luces.html" class="dock-item active">
+        <span class="num">01</span>
+        <span class="name">Luces & Sombras</span>
+      </a>
+
+      <a href="./views/exp-02-modelo.html" class="dock-item">
+        <span class="num">02</span>
+        <span class="name">Modelos y Texturas</span>
+      </a>
+
+      <a href="./views/exp-03-particulas.html" class="dock-item">
+        <span class="num">03</span>
+        <span class="name">Sistema de Partículas</span>
+      </a>
+
+      <a href="./views/exp-04-modelos.html" class="dock-item">
+        <span class="num">04</span>
+        <span class="name">Carga de GLTF/3D</span>
+      </a>
+
+      <a href="./views/exp-05-postprocessing.html" class="dock-item">
+        <span class="num">05</span>
+        <span class="name">Efectos de Shaders</span>
+      </a>
+
+      <a href="./views/exp-06-fisica.html" class="dock-item">
+        <span class="num">06</span>
+        <span class="name">Físicas Cannon.js</span>
+      </a>
+
+      <!-- Puedes añadir 10, 20 o 50 enlaces más sin romper el layout -->
+    </div>
+  </nav>
+
+  <!-- Script de entrada -->
+  <script type="module" src="./scripts/main.js"></script>
 </body>
 </html>
