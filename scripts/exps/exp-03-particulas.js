@@ -159,7 +159,7 @@ const textureLoader = new THREE.TextureLoader();
 const customTextureHeart = textureLoader.load('../../assets/textures/heart.png');
 
 const ringConfig = {
-  count: 20000,
+  count: 2000,
   size: 0.9,
   colors: ['#0dff21', '#ff9af7'],
   speed: 0.4,
