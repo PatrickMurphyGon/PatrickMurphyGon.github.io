@@ -151,33 +151,80 @@ scene.add(firePoints);
 // ================================================
 // 6. TIPO 4: ANILLO ORBITAL (Toroide)
 // ================================================
+
+const textureLoader = new THREE.TextureLoader();
+const customTextureHeart = textureLoader.load('../../assets/textures/heart.png');
+
 const ringConfig = {
   count: 2000,
-  size: 0.1,
-  color: '#a855f7',
+  size: 0.9,
+  colors: ['#0dff21', '#ff9af7'],
   speed: 0.4,
+  innerRadius: 5,
+  outerRadius: 10,
+  thicknessY: 0.5,
   visible: true
 };
 
 const ringGeometry = new THREE.BufferGeometry();
 const ringPositions = new Float32Array(ringConfig.count * 3);
-
-for (let i = 0; i < ringConfig.count * 3; i += 3) {
-  const angle = Math.random() * Math.PI * 2;
-  const radius = 6 + (Math.random() - 0.5) * 1.5;
-
-  ringPositions[i] = Math.cos(angle) * radius;
-  ringPositions[i + 1] = (Math.random() - 0.5) * 0.5;
-  ringPositions[i + 2] = Math.sin(angle) * radius;
-}
+const ringColors = new Float32Array(ringConfig.count * 3);
 
 ringGeometry.setAttribute('position', new THREE.BufferAttribute(ringPositions, 3));
+ringGeometry.setAttribute('color', new THREE.BufferAttribute(ringColors, 3));
+
+function updateRingPositions() {
+  const positions = ringGeometry.attributes.position.array;
+
+  for (let i = 0; i < ringConfig.count * 3; i += 3) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = ringConfig.innerRadius + Math.random() * (ringConfig.outerRadius - ringConfig.innerRadius);
+
+    positions[i]     = Math.cos(angle) * radius;
+    positions[i + 1] = (Math.random() - 0.5) * ringConfig.thicknessY;
+    positions[i + 2] = Math.sin(angle) * radius;
+  }
+
+  ringGeometry.attributes.position.needsUpdate = true;
+}
+
+// La ejecutamos una vez al arrancar para crear la forma inicial
+updateRingPositions();
+
+// 2. Función para pintar las partículas leyendo directamente desde ringConfig.colors
+const tempColor = new THREE.Color();
+
+function updateRingColors() {
+  const colors = ringGeometry.attributes.color.array;
+
+  for (let i = 0; i < ringConfig.count; i++) {
+    const i3 = i * 3;
+
+    // Selecciona un color aleatorio de tu lista en cada iteración
+    const randomHex = ringConfig.colors[Math.floor(Math.random() * ringConfig.colors.length)];
+    tempColor.set(randomHex);
+
+    colors[i3]     = tempColor.r;
+    colors[i3 + 1] = tempColor.g;
+    colors[i3 + 2] = tempColor.b;
+  }
+  
+  // Notificar actualización a Three.js
+  ringGeometry.attributes.color.needsUpdate = true;
+}
+
+// Generamos los colores iniciales
+updateRingColors();
+
+// 2. Asignamos tanto posiciones como colores a la geometría
+ringGeometry.setAttribute('position', new THREE.BufferAttribute(ringPositions, 3));
+ringGeometry.setAttribute('color', new THREE.BufferAttribute(ringColors, 3));
 
 const ringMaterial = new THREE.PointsMaterial({
   size: ringConfig.size,
-  color: ringConfig.color,
-  map: particleTexture,
+  map: customTextureHeart,
   transparent: true,
+  vertexColors: true, // 👈 3. ¡CLAVE! Le dice al material que lea los colores de la geometría
   blending: THREE.AdditiveBlending,
   depthWrite: false
 });
@@ -185,33 +232,99 @@ const ringMaterial = new THREE.PointsMaterial({
 const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
 scene.add(ringPoints);
 
+// ================================================
+// 6.5. TIPO 5: ONDA DE PARTÍCULAS CUSTOM
+// ================================================
+
+// 1. Cargador de texturas de Three.js
+const customTexture = textureLoader.load('../../assets/textures/apple.png');
+
+// 2. Configuración para el menú LIL-GUI
+const waveConfig = {
+  count: 50,          // Cantidad de partículas en la línea
+  size: 0.4,           // Tamaño del sprite
+  color: '#ff0000',    // Color Turquesa/Neón
+  speed: 3.0,          // Velocidad del desplazamiento de la onda
+  frequency: 0.4,      // Cantidad de crestas/valles
+  amplitude: 1.5,      // Altura máxima de la onda (subida/bajada)
+  visible: true
+};
+
+const waveGeometry = new THREE.BufferGeometry();
+const wavePositions = new Float32Array(waveConfig.count * 3);
+
+// 3. Posicionar partículas en una LÍNEA RECTA a lo largo del eje X
+const lineLength = 20; // La línea mide 20 unidades (de X = -10 a X = 10)
+
+for (let i = 0; i < waveConfig.count; i++) {
+  // Calculamos la posición X equitativamente repartida
+  const x = - (lineLength / 2) + (i / waveConfig.count) * lineLength;
+  
+  wavePositions[i * 3]     = x; // Posición X
+  wavePositions[i * 3 + 1] = 0; // Posición Y inicial
+  wavePositions[i * 3 + 2] = 0; // Posición Z inicial (Línea recta en el centro)
+}
+
+waveGeometry.setAttribute('position', new THREE.BufferAttribute(wavePositions, 3));
+
+// 4. Material usando tu textura custom
+const waveMaterial = new THREE.PointsMaterial({
+  size: waveConfig.size,
+  color: waveConfig.color,
+  map: customTexture,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false
+});
+
+const wavePoints = new THREE.Points(waveGeometry, waveMaterial);
+scene.add(wavePoints);
+
 
 // ================================================
 // 7. CONTROLES DEL MENÚ (LIL-GUI)
 // ================================================
+
+// Galaxia
 const fGalaxy = gui.addFolder('1. Galaxia');
 fGalaxy.add(galaxyConfig, 'visible').onChange(v => galaxyPoints.visible = v);
 fGalaxy.add(galaxyConfig, 'size', 0.01, 1).onChange(s => galaxyMaterial.size = s);
 fGalaxy.add(galaxyConfig, 'speed', 0, 100);
 fGalaxy.addColor(galaxyConfig, 'color').onChange(c => galaxyMaterial.color.set(c));
 
+// LLuvia
 const fRain = gui.addFolder('2. Lluvia');
 fRain.add(rainConfig, 'visible').onChange(v => rainPoints.visible = v);
 fRain.add(rainConfig, 'size', 0.01, 1).onChange(s => rainMaterial.size = s);
 fRain.add(rainConfig, 'speed', 0, 10);
 fRain.addColor(rainConfig, 'color').onChange(c => rainMaterial.color.set(c));
 
+// Fuego
 const fFire = gui.addFolder('3. Fuego');
 fFire.add(fireConfig, 'visible').onChange(v => firePoints.visible = v);
 fFire.add(fireConfig, 'size', 0.01, 1).onChange(s => fireMaterial.size = s);
 fFire.add(fireConfig, 'speed', 0, 10);
 fFire.addColor(fireConfig, 'color').onChange(c => fireMaterial.color.set(c));
 
+// Anillo
 const fRing = gui.addFolder('4. Anillo Orbital');
 fRing.add(ringConfig, 'visible').onChange(v => ringPoints.visible = v);
 fRing.add(ringConfig, 'size', 0.01, 1).onChange(s => ringMaterial.size = s);
-fRing.add(ringConfig, 'speed', 0, 100);
-fRing.addColor(ringConfig, 'color').onChange(c => ringMaterial.color.set(c));
+fRing.add(ringConfig, 'speed', 0, 2);
+fRing.add(ringConfig, 'innerRadius', 1, 10).name('Radio Interior').onChange(updateRingPositions);
+fRing.add(ringConfig, 'outerRadius', 1, 20).name('Radio Exterior').onChange(updateRingPositions);
+fRing.add(ringConfig, 'thicknessY', 0.1, 10).name('Grosor Y').onChange(updateRingPositions);                                                        
+fRing.addColor(ringConfig.colors, 0).name('Color 1').onChange(() => updateRingColors()); // Apuntamos al Array (ringConfig.colors) pasando la posición del índice (0 y 1)
+fRing.addColor(ringConfig.colors, 1).name('Color 2').onChange(() => updateRingColors());
+
+// Carpeta 5: Onda Custom
+const fWave = gui.addFolder('5. Onda Custom');
+fWave.add(waveConfig, 'visible').onChange(v => wavePoints.visible = v);
+fWave.add(waveConfig, 'size', 0.05, 1.2).onChange(s => waveMaterial.size = s);
+fWave.add(waveConfig, 'speed', 0.5, 8.0);
+fWave.add(waveConfig, 'frequency', 0.1, 2.0);
+fWave.add(waveConfig, 'amplitude', 0.1, 4.0);
+fWave.addColor(waveConfig, 'color').onChange(c => waveMaterial.color.set(c));
 
 
 // ================================================
@@ -257,6 +370,21 @@ function animate() {
   if (ringPoints.visible) {
     ringPoints.rotation.y = -elapsedTime * ringConfig.speed * 0.3;
     ringPoints.position.y = Math.sin(elapsedTime * 2) * 0.3;
+  }
+
+  // 5. Animación: Onda Senoidal en línea recta
+  if (wavePoints.visible) {
+    const positions = waveGeometry.attributes.position.array;
+
+    for (let i = 0; i < waveConfig.count; i++) {
+      const x = positions[i * 3]; // Leemos la coordenada X constante
+      
+      // Cálculo de la onda: Y = Seno( Tiempo * Velocidad + X * Frecuencia ) * Amplitud
+      positions[i * 3 + 1] = Math.sin(elapsedTime * waveConfig.speed + x * waveConfig.frequency) * waveConfig.amplitude;
+    }
+
+    // Indicar a Three.js que hemos modificado la posición Y de los puntos
+    waveGeometry.attributes.position.needsUpdate = true;
   }
 
   controls.update();
