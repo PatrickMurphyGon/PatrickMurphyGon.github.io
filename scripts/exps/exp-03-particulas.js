@@ -49,7 +49,7 @@ const galaxyConfig = {
   size: 0.18,
   color: '#38bdf8',
   speed: 0.2,
-  visible: true
+  visible: false
 };
 
 const galaxyGeometry = new THREE.BufferGeometry();
@@ -77,6 +77,7 @@ const galaxyMaterial = new THREE.PointsMaterial({
 });
 
 const galaxyPoints = new THREE.Points(galaxyGeometry, galaxyMaterial);
+galaxyPoints.visible = galaxyConfig.visible;
 scene.add(galaxyPoints);
 
 // ================================================
@@ -87,7 +88,7 @@ const rainConfig = {
   size: 0.12,
   color: '#818cf8',
   speed: 0.15,
-  visible: true
+  visible: false
 };
 
 const rainGeometry = new THREE.BufferGeometry();
@@ -111,6 +112,7 @@ const rainMaterial = new THREE.PointsMaterial({
 });
 
 const rainPoints = new THREE.Points(rainGeometry, rainMaterial);
+rainPoints.visible = rainConfig.visible;
 scene.add(rainPoints);
 
 // ================================================
@@ -121,7 +123,7 @@ const fireConfig = {
   size: 0.25,
   color: '#f89538',
   speed: 0.05,
-  visible: true
+  visible: false
 };
 
 const fireGeometry = new THREE.BufferGeometry();
@@ -145,6 +147,7 @@ const fireMaterial = new THREE.PointsMaterial({
 });
 
 const firePoints = new THREE.Points(fireGeometry, fireMaterial);
+firePoints.visible = fireConfig.visible;
 scene.add(firePoints);
 
 
@@ -156,7 +159,7 @@ const textureLoader = new THREE.TextureLoader();
 const customTextureHeart = textureLoader.load('../../assets/textures/heart.png');
 
 const ringConfig = {
-  count: 2000,
+  count: 20000,
   size: 0.9,
   colors: ['#0dff21', '#ff9af7'],
   speed: 0.4,
@@ -224,12 +227,13 @@ const ringMaterial = new THREE.PointsMaterial({
   size: ringConfig.size,
   map: customTextureHeart,
   transparent: true,
-  vertexColors: true, // 👈 3. ¡CLAVE! Le dice al material que lea los colores de la geometría
+  vertexColors: true, // Le dice al material que lea los colores de la geometría
   blending: THREE.AdditiveBlending,
   depthWrite: false
 });
 
 const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
+ringPoints.visible = ringConfig.visible;
 scene.add(ringPoints);
 
 // ================================================
@@ -278,6 +282,7 @@ const waveMaterial = new THREE.PointsMaterial({
 });
 
 const wavePoints = new THREE.Points(waveGeometry, waveMaterial);
+wavePoints.visible = waveConfig.visible;
 scene.add(wavePoints);
 
 
