@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exp 04 - Partículas Reactivas al Audio</title>
+    <link rel="stylesheet" href="../style/style.css">
+
+    <!-- MAPA DE IMPORTACIONES -->
+    <script type="importmap">
+        {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19.1/dist/lil-gui.esm.min.js"
+        }
+        }
+    </script>
+    <style>
+        .audio-controls {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.6rem;
+            background: rgba(42, 29, 15, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.8rem 1rem;
+            border-radius: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .audio-controls .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-audio-action {
+            padding: 0.55rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #f89538;
+            color: #0f172a;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-audio-action:hover:not(:disabled) {
+            background: #fcba7d;
+            transform: translateY(-2px);
+        }
+
+        /* Estado deshabilitado del botón Play antes de subir música */
+        .btn-audio-action:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #audio-status {
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            max-width: 240px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Slider de Volumen */
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: 0.2rem;
+        }
+
+        .volume-icon {
+            font-size: 0.9rem;
+        }
+
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Estilo del botón del slider */
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #f89538;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        #volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #fcba7d;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Botón de regreso -->
+    <a href="../index.html" class="btn-back">← Volver al inicio</a>
+
+    <!-- Interfaz de Control de Audio -->
+    <div class="audio-controls">
+        <!-- Input invisible para abrir el explorador de archivos del PC -->
+        <input type="file" id="audio-file-input" accept="audio/*" hidden />
+
+        <div class="button-group">
+            <button id="btn-upload" class="btn-audio-action">📁 Cargar MP3</button>
+            <button id="btn-play" class="btn-audio-action" disabled>▶️ Play</button>
+        </div>
+
+        <!-- 🔊 NUEVO: Control de Volumen -->
+        <div class="volume-container">
+            <span class="volume-icon">🔊</span>
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" />
+        </div>
+
+        <span id="audio-status">Elige un archivo MP3 de tu equipo</span>
+    </div>
+
+    <!-- Canvas 3D -->
+    <canvas id="webgl"></canvas>
+
+    <!-- Script del experimento -->
+    <script type="module" src="../scripts/exps/exp-04-ritmo.js"></script>
+</body>
+
+</html>
