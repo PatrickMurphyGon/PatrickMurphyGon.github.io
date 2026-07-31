@@ -155,7 +155,7 @@ exrLoader.load(
 
 
 // A. Textura de Césped para el Suelo ------------------------
-const grassTexture = textureLoader.load('../../assets/textures/grass.jpg');
+const grassTexture = textureLoader.load('../../assets/textures/Grass.jpg');
 
 // Habilita la repetición
 grassTexture.wrapS = THREE.RepeatWrapping;
