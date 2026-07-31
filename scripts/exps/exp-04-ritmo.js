@@ -9,8 +9,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-// SHADERS EXTERNOS
+// SHADERS EXTERNOS Y CONTROLADOR DE RADIO
 import { GodRaysShader, setGodRaysParams } from '../../assets/shaders/GodRaysShader.js';
+import { RadioController } from '../radioController.js';
 
 // ================================================
 // 1. ESCENA, CÁMARA Y RENDERIZADOR BASE
@@ -38,9 +39,9 @@ composer.addPass(renderPass);
 
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.8, // Intensidad inicial del bloom
-  0.5, // Radio
-  0.2  // Umbral
+  0.8,
+  0.5,
+  0.2
 );
 composer.addPass(bloomPass);
 
@@ -63,7 +64,7 @@ const postProcessingConfig = {
 };
 
 // ================================================
-// 3. SISTEMA DE AUDIO Y ANALIZADOR DE FRECUENCIAS
+// 3. SISTEMA DE AUDIO Y CONTROLADOR DE RADIO
 // ================================================
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -81,8 +82,16 @@ const btnPlay = document.getElementById('btn-play');
 const volumeSlider = document.getElementById('volume-slider');
 const audioStatus = document.getElementById('audio-status');
 
-let isAudioLoaded = false;
+// Inicialización del controlador de Radio en JS independiente
+const radioController = new RadioController({
+  sound: sound,
+  listener: listener,
+  onStatusChange: (message) => {
+    if (audioStatus) audioStatus.innerText = message;
+  }
+});
 
+// Eventos de Subida de MP3 Local
 if (btnUpload) {
   btnUpload.addEventListener('click', () => {
     if (listener.context.state === 'suspended') listener.context.resume();
@@ -99,37 +108,33 @@ if (fileInput) {
     const fileUrl = URL.createObjectURL(file);
 
     audioLoader.load(fileUrl, (buffer) => {
+      // Notificar al radioController de que cambiamos a modo MP3
+      radioController.onLocalMp3Active();
+
       if (sound.isPlaying) sound.stop();
       sound.setBuffer(buffer);
       sound.setLoop(true);
       sound.setVolume(volumeSlider ? parseFloat(volumeSlider.value) : 0.5);
       sound.play();
 
-      isAudioLoaded = true;
-      btnPlay.disabled = false;
-      btnPlay.innerText = '⏸️ Pausa';
       audioStatus.innerText = `Sonando: ${file.name}`;
+      radioController.updateUI();
     });
   });
 }
 
+// Botón de reproducción/pausa unificado
 if (btnPlay) {
   btnPlay.addEventListener('click', () => {
-    if (!isAudioLoaded) return;
-    if (sound.isPlaying) {
-      sound.pause();
-      btnPlay.innerText = '▶️ Play';
-      audioStatus.innerText = 'Audio en pausa';
-    } else {
-      sound.play();
-      btnPlay.innerText = '⏸️ Pausa';
-      audioStatus.innerText = 'Reproduciendo audio';
-    }
+    radioController.togglePlayPause();
   });
 }
 
+// Control único de volumen para MP3 y Radio
 if (volumeSlider) {
-  volumeSlider.addEventListener('input', (e) => sound.setVolume(parseFloat(e.target.value)));
+  volumeSlider.addEventListener('input', (e) => {
+    sound.setVolume(parseFloat(e.target.value));
+  });
 }
 
 // ================================================
@@ -153,37 +158,32 @@ function createParticleTexture() {
 }
 
 // ================================================
-// 5. SHADERS GLSL (CON EXPONENTES Y FASE DINÁMICA DE OLA)
+// 5. SHADERS GLSL EN GPU
 // ================================================
-
 const vertexShader = `
-  attribute float aBand;          // 0.0 = Graves, 1.0 = Medios, 2.0 = Agudos
+  attribute float aBand;          
   attribute vec3 aSphereDir;      
   attribute vec3 aOscPos;         
   attribute vec3 aGroundPos;      
 
-  uniform float uMode;            // 0.0 = Esfera, 1.0 = Osciloscopio, 2.0 = Suelo
-  uniform float uWavePhase;       // Fase de ola impulsada por el bajo
-  uniform float uWaveFreq;        // Frecuencia espacial de las olas
+  uniform float uMode;            
+  uniform float uWavePhase;       
+  uniform float uWaveFreq;        
   uniform float uBaseRadius;
   uniform float uParticleSize;
 
-  // Amplitudes
   uniform float uBassAmp;
   uniform float uMidAmp;
   uniform float uTrebleAmp;
 
-  // Exponentes de Contraste / Punch (Acentúa golpes)
   uniform float uBassPunch;
   uniform float uMidPunch;
   uniform float uTreblePunch;
 
-  // Valores de Frecuencia (0.0 a 1.0)
   uniform float uBassVal;
   uniform float uMidVal;
   uniform float uTrebleVal;
 
-  // Colores por Banda
   uniform vec3 uBassColor;
   uniform vec3 uMidColor;
   uniform vec3 uTrebleColor;
@@ -196,7 +196,6 @@ const vertexShader = `
     float punchExp = 1.0;
     vec3 bandColor = vec3(1.0);
 
-    // Selección de banda
     if (aBand < 0.5) {
       rawVal = uBassVal;
       amp = uBassAmp;
@@ -214,26 +213,19 @@ const vertexShader = `
       bandColor = uTrebleColor;
     }
 
-    // APLICACIÓN DE LA CURVA DE CONTRASTE (PUNCH)
-    // pow(rawVal, punchExp) aplana ruidos suaves y multiplica golpes fuertes
     float audioVal = pow(rawVal, punchExp);
-
-    // Intensidad visual modulada
     vColor = bandColor * (0.2 + audioVal * 1.5);
 
     vec3 targetPos = vec3(0.0);
 
     if (uMode < 0.5) {
-      // MODO 0: ESFERA REACTIVA
       float radius = uBaseRadius + (audioVal * amp);
       targetPos = aSphereDir * radius;
     } else if (uMode < 1.5) {
-      // MODO 1: OSCILOSCOPIO 3D (La ola responde al valor de Punch)
       targetPos = aOscPos;
       float wave = sin(aOscPos.x * uWaveFreq + uWavePhase);
       targetPos.y += (audioVal * amp * 3.0) * wave;
     } else {
-      // MODO 2: SUELO DE ONDAS (Propagación concéntrica por impacto)
       targetPos = aGroundPos;
       float dist = length(aGroundPos.xz);
       float wave = cos(dist * uWaveFreq - uWavePhase);
@@ -243,7 +235,6 @@ const vertexShader = `
     vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    // Escala dinámica del tamaño según impacto del golpe
     gl_PointSize = uParticleSize * (300.0 / -mvPosition.z) * (0.8 + audioVal * 1.2);
   }
 `;
@@ -276,23 +267,19 @@ const initialColor = new THREE.Color('#00d2ff');
 
 for (let i = 0; i < particleCount; i++) {
   const i3 = i * 3;
-
   bands[i] = i % 3;
 
-  // Esfera
   const theta = Math.random() * Math.PI * 2;
   const phi = Math.acos((Math.random() * 2) - 1);
   sphereDirs[i3]     = Math.sin(phi) * Math.cos(theta);
   sphereDirs[i3 + 1] = Math.sin(phi) * Math.sin(theta);
   sphereDirs[i3 + 2] = Math.cos(phi);
 
-  // Osciloscopio
   const progress = i / particleCount;
   oscPositions[i3]     = (progress - 0.5) * 18.0;
   oscPositions[i3 + 1] = Math.sin(progress * Math.PI * 8) * 1.5;
   oscPositions[i3 + 2] = Math.cos(progress * Math.PI * 8) * 1.5;
 
-  // Suelo
   const gridSize = Math.sqrt(particleCount);
   const gx = (i % gridSize) / gridSize - 0.5;
   const gz = Math.floor(i / gridSize) / gridSize - 0.5;
@@ -307,7 +294,6 @@ particleGeometry.setAttribute('aSphereDir', new THREE.BufferAttribute(sphereDirs
 particleGeometry.setAttribute('aOscPos', new THREE.BufferAttribute(oscPositions, 3));
 particleGeometry.setAttribute('aGroundPos', new THREE.BufferAttribute(groundPositions, 3));
 
-// Uniforms con nuevos parámetros
 const particleUniforms = {
   uWavePhase: { value: 0.0 },
   uWaveFreq: { value: 0.8 },
@@ -315,22 +301,18 @@ const particleUniforms = {
   uBaseRadius: { value: 3.5 },
   uParticleSize: { value: 0.22 },
 
-  // Amplitudes
   uBassAmp: { value: 3.0 },
   uMidAmp: { value: 2.2 },
   uTrebleAmp: { value: 1.8 },
 
-  // Exponentes de Impacto (Exponentes > 1.0 aumentan la diferencia entre graves suaves y golpes)
   uBassPunch: { value: 2.5 },
   uMidPunch: { value: 2.0 },
   uTreblePunch: { value: 1.8 },
 
-  // Frecuencias
   uBassVal: { value: 0.0 },
   uMidVal: { value: 0.0 },
   uTrebleVal: { value: 0.0 },
 
-  // Colores
   uBassColor: { value: initialColor.clone() },
   uMidColor: { value: initialColor.clone() },
   uTrebleColor: { value: initialColor.clone() },
@@ -350,10 +332,7 @@ const particleMaterial = new THREE.ShaderMaterial({
 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
 scene.add(particleSystem);
 
-// Configuración adicional de velocidad de propagación de ola
-const waveControls = {
-  speedMultiplier: 6.0 // Sensibilidad del avance de la ola por golpe de bajo
-};
+const waveControls = { speedMultiplier: 6.0 };
 
 // ================================================
 // 7. CONFIGURACIÓN DE CAMERA SHAKE
@@ -366,15 +345,13 @@ const shakeConfig = {
 };
 
 // ================================================
-// 8. GUI INTERACTIVO COMPLETO
+// 8. PANEL DE CONTROL INTERACTIVO (LIL-GUI)
 // ================================================
 const gui = new GUI({ title: '🎛️ Moduladores de Audio GPU' });
 
-// Modo Visual
 const modes = { 'Esfera Reactiva': 0, 'Osciloscopio 3D': 1, 'Suelo de Ondas': 2 };
 gui.add(particleUniforms.uMode, 'value', modes).name('📐 Modo Visual');
 
-// Carpeta: Amplitudes y Sensibilidad al Golpe (Punch)
 const fAmp = gui.addFolder('🎚️ Respuesta Frecuencial');
 fAmp.add(particleUniforms.uBassAmp, 'value', 0.0, 8.0).name('Amp. Graves');
 fAmp.add(particleUniforms.uBassPunch, 'value', 1.0, 5.0).name('💥 Impacto/Punch Graves');
@@ -385,31 +362,27 @@ fAmp.add(particleUniforms.uMidPunch, 'value', 1.0, 5.0).name('💥 Impacto/Punch
 fAmp.add(particleUniforms.uTrebleAmp, 'value', 0.0, 8.0).name('Amp. Agudos');
 fAmp.add(particleUniforms.uTreblePunch, 'value', 1.0, 5.0).name('💥 Impacto/Punch Agudos');
 
-// Carpeta: Dinámica de Olas
 const fWaves = gui.addFolder('🌊 Comportamiento de Olas');
 fWaves.add(particleUniforms.uWaveFreq, 'value', 0.2, 2.5).name('Frecuencia/Ruptura');
 fWaves.add(waveControls, 'speedMultiplier', 1.0, 15.0).name('Velocidad al Golpear');
 
-// Carpeta: Colores por Banda
 const fColors = gui.addFolder('🎨 Colores por Banda');
 const colorParams = { bass: '#00d2ff', mids: '#00d2ff', treble: '#00d2ff' };
 fColors.addColor(colorParams, 'bass').name('Color Graves').onChange(c => particleUniforms.uBassColor.value.set(c));
 fColors.addColor(colorParams, 'mids').name('Color Medios').onChange(c => particleUniforms.uMidColor.value.set(c));
 fColors.addColor(colorParams, 'treble').name('Color Agudos').onChange(c => particleUniforms.uTrebleColor.value.set(c));
 
-// Carpeta: Camera Shake
 const fShake = gui.addFolder('📳 Sacudida de Cámara');
 fShake.add(shakeConfig, 'enabled').name('Activar Shake');
 fShake.add(shakeConfig, 'threshold', 0.3, 0.95).name('Umbral Golpe (Bass)');
 fShake.add(shakeConfig, 'maxIntensity', 0.05, 1.0).name('Intensidad Máx');
 
-// Carpeta: Post-Procesado
 const fPost = gui.addFolder('✨ Post-Procesado');
 fPost.add(postProcessingConfig, 'enableBloom').name('Activar Bloom').onChange(v => bloomPass.enabled = v);
 fPost.add(postProcessingConfig, 'enableGodRays').name('Activar GodRays').onChange(v => godRaysPass.enabled = v);
 
 // ================================================
-// 9. BUCLE DE ANIMACIÓN
+// 9. BUCLE DE ANIMACIÓN Y RENDER
 // ================================================
 const clock = new THREE.Clock();
 
@@ -419,7 +392,8 @@ function animate() {
   const deltaTime = clock.getDelta();
   const elapsedTime = clock.getElapsedTime();
 
-  if (isAudioLoaded && sound.isPlaying) {
+  // Evaluamos si la fuente de audio está activa mediante nuestro radioController
+  if (radioController.isAudioActive()) {
     const freqData = analyser.getFrequencyData();
 
     // 1. Graves (0-7)
@@ -437,13 +411,12 @@ function animate() {
     for (let i = 32; i < 64; i++) trebleSum += freqData[i];
     const trebleVal = (trebleSum / 32) / 255.0;
 
-    // Enviar a los uniforms
+    // Actualizamos uniforms de los shaders
     particleUniforms.uBassVal.value = bassVal;
     particleUniforms.uMidVal.value = midVal;
     particleUniforms.uTrebleVal.value = trebleVal;
 
-    // PROPAGACIÓN DINÁMICA DE LA OLA:
-    // La fase se incrementa solo según la intensidad del golpe de bajo.
+    // Propagación de ola según el ritmo
     particleUniforms.uWavePhase.value += (0.4 + bassVal * waveControls.speedMultiplier) * deltaTime;
 
     // Camera Shake
@@ -451,16 +424,14 @@ function animate() {
       shakeConfig.currentIntensity = bassVal * shakeConfig.maxIntensity;
     }
   } else {
-    // Si no hay música sonando, las olas avanzan muy despacio en reposo
+    // Si la música está pausada, la animación en reposo desacelera
     particleUniforms.uWavePhase.value += 0.5 * deltaTime;
   }
 
-  // Rotación pasiva constante de la escena
   particleSystem.rotation.y = elapsedTime * 0.05;
 
   controls.update();
 
-  // Temblor de cámara
   if (shakeConfig.currentIntensity > 0.001) {
     camera.position.x += (Math.random() - 0.5) * shakeConfig.currentIntensity;
     camera.position.y += (Math.random() - 0.5) * shakeConfig.currentIntensity;
