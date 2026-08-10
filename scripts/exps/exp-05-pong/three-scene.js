@@ -174,23 +174,40 @@ export function updateFieldColor(currentSpeed, minSpeed, maxSpeed, isHyperActive
   bgParticles.material.color.copy(tempColor);
 }
 
-// 6. CREACIÓN DE PALAS Y BOLA NEÓN
-const paddleGeo = new THREE.BoxGeometry(0.6, 0.5, 4.5);
+// 6. CREACIÓN DE PALAS Y BOLA NEÓN (CON ESCALA PROPORCIONAL)
+// La profundidad base es 1 unidad para poder escalarla mediante scale.z
+const paddleGeo = new THREE.BoxGeometry(0.6, 0.5, 1);
 const ballGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
 
 const matLeft = new THREE.MeshBasicMaterial({ color: 0xff0055 });
 const matRight = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
 const matBall = new THREE.MeshBasicMaterial({ color: 0xffee00 });
 
+/** @type {THREE.Mesh} */
 export const paddleLeft = new THREE.Mesh(paddleGeo, matLeft);
+/** @type {THREE.Mesh} */
 export const paddleRight = new THREE.Mesh(paddleGeo, matRight);
+/** @type {THREE.Mesh} */
 export const ball = new THREE.Mesh(ballGeo, matBall);
 
 scene.add(paddleLeft, paddleRight, ball);
 
+// PORCENTAJE DEL CAMPO VISIBLE QUE OCUPARÁN LAS PALAS (22%)
+export const PADDLE_HEIGHT_RATIO = 0.22;
+
+export function updatePaddleSizes() {
+  const dims = getVisibleDimensions();
+  const paddleHeight = dims.height * PADDLE_HEIGHT_RATIO;
+
+  paddleLeft.scale.z = paddleHeight;
+  paddleRight.scale.z = paddleHeight;
+}
+
 export function resetPositions() {
   const dims = getVisibleDimensions();
   const margin = 2;
+
+  updatePaddleSizes(); // Actualiza escala de las palas al resetear
 
   paddleLeft.position.set(-dims.width / 2 + margin, 0.3, 0);
   paddleRight.position.set(dims.width / 2 - margin, 0.3, 0);
@@ -293,7 +310,7 @@ export function createGoalExplosion(pos, colorHex) {
 }
 
 export function updateFX(delta, rawDelta, time) {
-  // Actualizar Shake de Cámara usando el tiempo real desescalado (rawDelta)
+  // Shake de cámara
   if (shakeTimer > 0) {
     shakeTimer -= rawDelta;
     const currentIntensity = shakeIntensity * (shakeTimer / 2.0);
@@ -344,7 +361,7 @@ export function updateFX(delta, rawDelta, time) {
   }
 }
 
-// 10. REDIMENSIÓN
+// 10. REDIMENSIÓN DE PANTALLA Y EVENTOS
 export function handleResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -353,6 +370,7 @@ export function handleResize() {
   composer.setSize(window.innerWidth, window.innerHeight);
 
   createNeonField();
+  updatePaddleSizes(); // Recalcular tamaño proporcional de palas al cambiar de resolución
 
   const newDims = getVisibleDimensions();
   const margin = 2;
