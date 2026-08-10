@@ -1,0 +1,177 @@
+html, body, #webgl {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+#ui-pong {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10; /* Coloca la interfaz por encima del Canvas 3D */
+  pointer-events: none;
+  font-family: 'Courier New', Courier, monospace;
+  color: #00f3ff;
+  text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Centra el contenido verticalmente */
+  gap: 30px; /* Espaciado entre marcador y botón de inicio */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#scoreboard {
+  font-size: 3.5rem;
+  font-weight: bold;
+}
+
+.btn-neon {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #00f3ff;
+  color: #00f3ff;
+  padding: 14px 32px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 15px #00f3ff;
+  transition: all 0.3s ease;
+}
+
+.btn-neon:hover {
+  background: #00f3ff;
+  color: #000;
+  box-shadow: 0 0 25px #00f3ff;
+}
+
+#winner-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  pointer-events: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ================================================
+   OVERLAY DE ROTACIÓN DE PANTALLA (CYBERPUNK)
+   ================================================ */
+
+#rotate-screen-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 5, 12, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Tarjeta Central con Borde Neón */
+.rotate-card {
+  background: rgba(10, 15, 30, 0.75);
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px 30px;
+  max-width: 320px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Teléfono en CSS */
+.phone-animation {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone {
+  width: 42px;
+  height: 76px;
+  border: 3px solid #00f3ff;
+  border-radius: 8px;
+  box-shadow: 0 0 15px #00f3ff, inset 0 0 10px rgba(0, 243, 255, 0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rotatePhone 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.phone-screen {
+  width: 80%;
+  height: 80%;
+  background: linear-gradient(135deg, #ff0055, #00f3ff);
+  border-radius: 3px;
+  opacity: 0.8;
+}
+
+/* Animación de Giro Suave */
+@keyframes rotatePhone {
+  0%, 15% {
+    transform: rotate(0deg);
+  }
+  50%, 65% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* Textos Neón */
+.rotate-card h2 {
+  color: #00f3ff;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.8);
+}
+
+.rotate-card p {
+  color: #a0a5c0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Activar solo cuando la pantalla está en VERTICAL y es un móvil/tablet */
+@media (orientation: portrait) and (max-width: 900px) {
+  #rotate-screen-modal {
+    display: flex;
+  }
+  #ui-pong {
+    display: none !important;
+  }
+}
+
