@@ -25,7 +25,7 @@ composer.addPass(renderPass);
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
   0.4, // Intensidad del brillo
-  0.9, // Radio de dispersión
+  0.5, // Radio de dispersión
   0.1  // Umbral
 );
 composer.addPass(bloomPass);
@@ -84,7 +84,7 @@ export function resetPositions() {
 // Inicializar posiciones al cargar
 resetPositions();
 
-// 🛠️ FUNCIÓN DE REDIMENSIÓN Y REAJUSTE DE POSICIÓN DE PALAS
+// FUNCIÓN DE REDIMENSIÓN Y REAJUSTE DE POSICIÓN DE PALAS
 export function handleResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
