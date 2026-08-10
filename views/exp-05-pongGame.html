@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exp 05 - Pong</title>
+  
+  <!-- Fuente Retro Cuadrada de Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="../style/style.css">
   <link rel="stylesheet" href="../style/style-pong.css">
 
@@ -33,7 +39,11 @@
 
   <!-- UI del Juego -->
   <div id="ui-pong">
-    <div id="scoreboard"><span id="score-left">0</span> : <span id="score-right">0</span></div>
+    <div id="scoreboard">
+        <span id="score-left">0</span> 
+        <span id="score-separator">:</span> 
+        <span id="score-right">0</span>
+    </div>
     <button id="btn-start" class="btn-neon">INICIAR JUEGO</button>
 
     <div id="winner-modal" class="hidden">

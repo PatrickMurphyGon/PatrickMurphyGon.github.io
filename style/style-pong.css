@@ -1,3 +1,7 @@
+*{
+  font-family: 'Press Start 2P', monospace;
+}
+
 html, body, #webgl {
   touch-action: none;
   user-select: none;
@@ -13,7 +17,6 @@ html, body, #webgl {
   height: 100%;
   z-index: 10; /* Coloca la interfaz por encima del Canvas 3D */
   pointer-events: none;
-  font-family: 'Courier New', Courier, monospace;
   color: #00f3ff;
   text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
   display: flex;
@@ -84,7 +87,6 @@ html, body, #webgl {
   z-index: 9998;
   align-items: center;
   justify-content: center;
-  font-family: 'Courier New', Courier, monospace;
 }
 
 /* Tarjeta Central con Borde Neón */
